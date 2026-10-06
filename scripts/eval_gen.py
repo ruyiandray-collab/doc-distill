@@ -5,7 +5,7 @@
   - 批量吞吐：75 题一起跑的总耗时 / 输出 tokens 每秒
   - 单条延迟：逐条跑前 10 题的平均耗时（更接近一个用户在问答页面上的体验）
 """
-import json, os, sys, time
+import hashlib, json, os, sys, time
 from pathlib import Path
 from vllm import LLM, SamplingParams
 from vllm.lora.request import LoRARequest
@@ -15,6 +15,7 @@ TEST = json.loads((W / "data/raft_test.json").read_text(encoding="utf-8"))
 OUT = Path(os.getenv("PRED_DIR", str(W / "preds"))); OUT.mkdir(exist_ok=True)
 CKPT = os.getenv("CKPT_DIR", "/root/autodl-tmp/ckpt")       # v2 用 /root/autodl-tmp/ckpt/v2
 SKIP_BASE = os.getenv("SKIP_BASE") == "1"                     # 原版模型不受模板影响，v2 不用重测
+SUFFIX = os.getenv("NAME_SUFFIX", "")                         # v2 写成 raft_8b_v2.jsonl，和 v1 并存于同一目录
 SP = SamplingParams(temperature=0, max_tokens=512)
 GROUPS = {
     "8b":   ("/root/autodl-tmp/models/Qwen3-8B",   {"base_8b": None, "raft_8b": "raft_8b", "plain_8b": "plain_8b"}),
@@ -33,12 +34,12 @@ def run(llm, name, lora):
     lat = []
     for x in TEST[:10]:
         t = time.time(); llm.chat([msgs(x)], **kw); lat.append(time.time() - t)
-    with (OUT / f"{name}.jsonl").open("w", encoding="utf-8") as f:
+    with (OUT / f"{name}{SUFFIX}.jsonl").open("w", encoding="utf-8") as f:
         for x, o in zip(TEST, outs):
-            f.write(json.dumps({"meta": x["meta"], "ref": x["output"], "pred": o.outputs[0].text}, ensure_ascii=False) + "\n")
-    stat = {"name": name, "batch_s": round(batch_s, 1), "out_tok_per_s": round(ntok / batch_s), "avg_latency_s": round(sum(lat) / len(lat), 2)}
+            f.write(json.dumps({"qid": hashlib.md5((x["instruction"] + "\x00" + x["output"]).encode()).hexdigest()[:12], "meta": x["meta"], "ref": x["output"], "pred": o.outputs[0].text}, ensure_ascii=False) + "\n")
+    stat = {"name": name + SUFFIX, "batch_s": round(batch_s, 1), "out_tok_per_s": round(ntok / batch_s), "avg_latency_s": round(sum(lat) / len(lat), 2)}
     print(json.dumps(stat, ensure_ascii=False))
-    with (OUT / "speed.jsonl").open("a", encoding="utf-8") as f:
+    with (OUT / f"speed{SUFFIX}.jsonl").open("a", encoding="utf-8") as f:
         f.write(json.dumps(stat, ensure_ascii=False) + "\n")
 
 if __name__ == "__main__":

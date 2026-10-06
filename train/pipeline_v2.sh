@@ -16,7 +16,8 @@ for cfg in raft_8b raft_1.7b plain_8b; do
   fi
 done
 deactivate; source /root/venvs/vllm/bin/activate
-export CKPT_DIR=/root/autodl-tmp/ckpt/v2 PRED_DIR=$W/preds_v2 SKIP_BASE=1
+# 预测直接写进 preds/，文件名带 _v2（score.py 默认读 preds/，v1 与 v2 可以同表比较）
+export CKPT_DIR=/root/autodl-tmp/ckpt/v2 PRED_DIR=$W/preds NAME_SUFFIX=_v2 SKIP_BASE=1
 python scripts/eval_gen.py 8b   > $L/v2_eval_8b.log 2>&1   || { echo 8b > $L/v2_eval.failed; exit 1; }
 python scripts/eval_gen.py 1.7b > $L/v2_eval_1.7b.log 2>&1 || { echo 1.7b > $L/v2_eval.failed; exit 1; }
 echo done > $L/v2_eval.done

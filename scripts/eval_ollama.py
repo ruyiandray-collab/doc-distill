@@ -2,7 +2,7 @@
 
   python scripts/eval_ollama.py raft-1.7b raft_1.7b_v2_q4_ollama
 """
-import json, sys, time, urllib.request
+import hashlib, json, sys, time, urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -24,7 +24,7 @@ for i, x in enumerate(TEST):
     if i < done:
         continue
     t = time.time(); r = chat(x); dt = time.time() - t
-    out.write(json.dumps({"meta": x["meta"], "ref": x["output"], "pred": r["message"]["content"]}, ensure_ascii=False) + "\n"); out.flush()
+    out.write(json.dumps({"qid": hashlib.md5((x["instruction"] + "\x00" + x["output"]).encode()).hexdigest()[:12], "meta": x["meta"], "ref": x["output"], "pred": r["message"]["content"]}, ensure_ascii=False) + "\n"); out.flush()
     stats.append((dt, r["prompt_eval_count"], r.get("prompt_eval_duration", 1) / 1e9, r["eval_count"], r["eval_duration"] / 1e9))
     print(f"{i + 1}/{len(TEST)} {dt:.1f}s", flush=True)
 n = len(stats)
