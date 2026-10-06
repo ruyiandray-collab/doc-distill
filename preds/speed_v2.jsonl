@@ -1,0 +1,3 @@
+{"name": "raft_8b", "batch_s": 18.2, "out_tok_per_s": 310, "avg_latency_s": 1.2}
+{"name": "plain_8b", "batch_s": 18.7, "out_tok_per_s": 348, "avg_latency_s": 1.59}
+{"name": "raft_1.7b", "batch_s": 5.5, "out_tok_per_s": 1048, "avg_latency_s": 0.32}

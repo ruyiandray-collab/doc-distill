@@ -1,0 +1,21 @@
+# 大文件：模型、适配器、工具链、虚拟环境（适配器另行发布到模型平台）
+.venv/
+models/
+adapters/
+tools/
+*.gguf
+*.safetensors
+
+# 资料原文用 scripts/fetch_corpus.py 下载；tree-RAG 索引可用 build_tree 重建
+corpus/raw/
+corpus/text/
+kb/
+treerag_data/
+preds_v2/
+
+# 运行日志与临时文件
+results/*.log
+results/*.err
+results/*.done
+results/*.ps1
+__pycache__/

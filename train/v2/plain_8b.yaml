@@ -1,0 +1,33 @@
+### plain_8b：8B + 普通 SFT（只给正确原文，消融对照组）（v2：修复模板）
+model_name_or_path: /root/autodl-tmp/models/Qwen3-8B
+template: qwen3
+enable_thinking: false   # v2：训练时也加空 <think> 块，和 vLLM 推理对齐
+stage: sft
+do_train: true
+finetuning_type: lora
+lora_target: all
+lora_rank: 16
+lora_alpha: 32
+lora_dropout: 0.05
+
+dataset_dir: /root/autodl-tmp/work/data
+dataset: plain_train
+cutoff_len: 4096
+overwrite_cache: true
+preprocessing_num_workers: 8
+
+per_device_train_batch_size: 2
+gradient_accumulation_steps: 8
+learning_rate: 1.0e-4
+num_train_epochs: 3
+lr_scheduler_type: cosine
+warmup_ratio: 0.1
+bf16: true
+gradient_checkpointing: true
+
+output_dir: /root/autodl-tmp/ckpt/v2/plain_8b
+logging_steps: 5
+save_strategy: epoch
+save_total_limit: 1
+plot_loss: true
+report_to: none

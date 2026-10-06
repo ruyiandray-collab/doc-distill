@@ -1,0 +1,18 @@
+{
+ "n": 71,
+ "mode": "tree+bge",
+ "gold_in_top4": 0.9436619718309859,
+ "gold_in_all_hits": 0.9436619718309859,
+ "avg_hits": 12.633802816901408,
+ "avg_retrieve_s": 3.4014084507042255,
+ "deepseek_raft": {
+  "acc": 0.9225352112676056,
+  "avg_answer_s": 1.447887323943662,
+  "acc_when_gold_in_top4": 0.9701492537313433
+ },
+ "local_raft_1.7b": {
+  "acc": 0.7676056338028169,
+  "avg_answer_s": 24.36338028169014,
+  "acc_when_gold_in_top4": 0.8059701492537313
+ }
+}

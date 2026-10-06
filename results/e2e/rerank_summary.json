@@ -1,0 +1,26 @@
+{
+ "tree": {
+  "gold_in_top1": 0.479,
+  "gold_in_top2": 0.634,
+  "gold_in_top4": 0.831,
+  "gold_in_top8": 0.901,
+  "gold_in_all": 0.944,
+  "rerank_s_per_q": 0.0
+ },
+ "tree+bm25": {
+  "gold_in_top1": 0.662,
+  "gold_in_top2": 0.817,
+  "gold_in_top4": 0.915,
+  "gold_in_top8": 0.944,
+  "gold_in_all": 0.944,
+  "rerank_s_per_q": 0.04
+ },
+ "tree+bge": {
+  "gold_in_top1": 0.915,
+  "gold_in_top2": 0.944,
+  "gold_in_top4": 0.944,
+  "gold_in_top8": 0.944,
+  "gold_in_all": 0.944,
+  "rerank_s_per_q": 21.87
+ }
+}

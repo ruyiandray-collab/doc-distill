@@ -1,0 +1,29 @@
+{
+ "raft_train": {
+  "file_name": "raft_train.json",
+  "columns": {
+   "system": "system",
+   "prompt": "instruction",
+   "query": "input",
+   "response": "output"
+  }
+ },
+ "raft_test": {
+  "file_name": "raft_test.json",
+  "columns": {
+   "system": "system",
+   "prompt": "instruction",
+   "query": "input",
+   "response": "output"
+  }
+ },
+ "plain_train": {
+  "file_name": "plain_train.json",
+  "columns": {
+   "system": "system",
+   "prompt": "instruction",
+   "query": "input",
+   "response": "output"
+  }
+ }
+}

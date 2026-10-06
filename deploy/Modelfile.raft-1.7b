@@ -1,0 +1,23 @@
+# Qwen3-1.7B + RAFT LoRA（v2，已合并），Q4_K_M 量化（llama.cpp）后给 Ollama 本地运行
+FROM ../models/raft-1.7b-Q4_K_M.gguf
+
+# 模板必须与训练时（LLaMA-Factory qwen3 + enable_thinking=false）逐 token 一致：
+# assistant 开头带一个空的 <think> 块，否则就会重现 v1 的"漏写依据"问题
+TEMPLATE """{{- if .System }}<|im_start|>system
+{{ .System }}<|im_end|>
+{{ end }}{{- range .Messages }}{{- if eq .Role "user" }}<|im_start|>user
+{{ .Content }}<|im_end|>
+{{ else if eq .Role "assistant" }}<|im_start|>assistant
+{{ .Content }}<|im_end|>
+{{ end }}{{- end }}<|im_start|>assistant
+<think>
+
+</think>
+
+"""
+
+SYSTEM """你是仓储与安全生产法规问答助手。只能依据用户提供的资料回答。先写「依据」：注明是第几段资料并逐字引用关键原文；再写「回答」，结论在前。如果资料中没有能回答问题的内容，直接说明无法回答，不要编造。"""
+
+PARAMETER stop "<|im_end|>"
+PARAMETER temperature 0
+PARAMETER num_ctx 6144

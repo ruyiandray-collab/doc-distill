@@ -1,0 +1,7 @@
+v1 qwen3_nothink: prompt 与推理一致 = False
+   训练 prompt 结尾: '事故隐患？<|im_end|>\n<|im_start|>assistant\n'
+   推理 prompt 结尾: '\n<|im_start|>assistant\n<think>\n\n</think>\n\n'
+   训练目标开头: '依据：[资料3]'
+[WARNING|2026-10-05 10:26:20] llamafactory.data.template:149 >> You are using reasoning template, please add `_nothink` suffix if the model is not a reasoning model. e.g., qwen3_vl_nothink
+v2 qwen3 + enable_thinking=false: prompt 与推理一致 = True
+   训练目标开头: '依据：[资料3]'

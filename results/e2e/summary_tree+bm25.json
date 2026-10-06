@@ -1,0 +1,18 @@
+{
+ "n": 71,
+ "mode": "tree+bm25",
+ "gold_in_top4": 0.9154929577464789,
+ "gold_in_all_hits": 0.9436619718309859,
+ "avg_hits": 12.633802816901408,
+ "avg_retrieve_s": 3.4014084507042255,
+ "deepseek_raft": {
+  "acc": 0.8873239436619719,
+  "avg_answer_s": 1.5014084507042254,
+  "acc_when_gold_in_top4": 0.9461538461538461
+ },
+ "local_raft_1.7b": {
+  "acc": 0.7605633802816901,
+  "avg_answer_s": 29.994366197183098,
+  "acc_when_gold_in_top4": 0.8153846153846154
+ }
+}

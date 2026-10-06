@@ -1,0 +1,1 @@
+{"name": "raft_1.7b_v2_q4_ollama", "n_timed": 15, "avg_latency_s": 33.0, "prefill_tok_per_s": 112, "decode_tok_per_s": 11.7}
