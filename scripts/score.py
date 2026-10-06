@@ -12,7 +12,7 @@
   拒答率      没有原文的题，正确地拒绝回答（越高越好，说明不编造）
   格式遵循率  输出里同时有「依据」和「回答」
 预测与题目的对应关系用 qid（题目内容的哈希）校验，防止行顺序错位或测试集重新生成后误用旧预测。
-裁判结果缓存在 results/judge_cache.json，重跑不重复花钱。
+裁判结果缓存在 results/judge_cache.json，键里包含题目指纹、参考答案、回答和裁判版本，任何一项变了都会重判。
 """
 import argparse, asyncio, hashlib, json, os, re
 from pathlib import Path
@@ -97,6 +97,13 @@ JUDGE = """你是严格的阅卷老师。
 2. verdict：对照参考答案，结论与关键数值/条件一致为 correct；结论对但遗漏重要条件或有小错为 partial；结论错误、答非所问或拒答为 wrong。
 只输出 JSON：{{"refused": true 或 false, "verdict": "correct|partial|wrong"}}"""
 NO_ANSWER_REF = "（本题提供的资料中没有答案，正确做法是拒答）"
+JUDGE_MODEL = "deepseek-chat"
+# 裁判提示词或裁判模型一改，指纹就变，旧判定自动失效
+JUDGE_VER = hashlib.md5((JUDGE + JUDGE_MODEL).encode()).hexdigest()[:8]
+
+def judge_key(i, ref_ans, pred):
+    """缓存键 = 题目指纹（含资料与参考答案）+ 本次送给裁判的参考答案 + 学生回答 + 裁判版本"""
+    return hashlib.md5("\x00".join([QIDS[i], ref_ans, pred, JUDGE_VER]).encode()).hexdigest()
 
 async def judge_all(items, cache):
     client = AsyncOpenAI(base_url="https://api.deepseek.com", api_key=os.environ["DEEPSEEK_API_KEY"])
@@ -104,7 +111,7 @@ async def judge_all(items, cache):
     async def one(key, q, ref, pred):
         if key in cache: return
         async with sem:
-            r = await client.chat.completions.create(model="deepseek-chat", temperature=0, response_format={"type": "json_object"},
+            r = await client.chat.completions.create(model=JUDGE_MODEL, temperature=0, response_format={"type": "json_object"},
                 messages=[{"role": "user", "content": JUDGE.format(q=q, ref=ref, pred=pred)}])
             cache[key] = json.loads(r.choices[0].message.content)
     await asyncio.gather(*[one(*it) for it in items])
@@ -118,7 +125,7 @@ def main(a):
     for name, rows in runs.items():
         for i, r in enumerate(rows):
             ref_ans = r["ref"].split("回答：")[-1] if r["meta"]["has_oracle"] else NO_ANSWER_REF
-            key = hashlib.md5((QUESTION[i] + r["pred"] + "v2").encode()).hexdigest()
+            key = judge_key(i, ref_ans, r["pred"])
             r["_key"] = key
             todo.append((key, QUESTION[i], ref_ans, r["pred"]))
     asyncio.run(judge_all(todo, cache))

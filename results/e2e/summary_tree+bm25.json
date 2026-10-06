@@ -11,8 +11,8 @@
   "acc_when_gold_in_top4": 0.9461538461538461
  },
  "local_raft_1.7b": {
-  "acc": 0.7605633802816901,
+  "acc": 0.7464788732394366,
   "avg_answer_s": 29.994366197183098,
-  "acc_when_gold_in_top4": 0.8153846153846154
+  "acc_when_gold_in_top4": 0.8
  }
 }
