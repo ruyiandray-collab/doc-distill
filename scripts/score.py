@@ -28,15 +28,18 @@ def is_refusal(t):
     ans = t[m[-1].end():] if m else t
     return bool(REFUSE.search(ans[:120]))
 
-def cite_ok(pred, ref, chunk_id):
+def cite_ok(pred, ref, chunk_id, context):
+    """资料编号对，且引号里的文字逐字出自原文：
+    - 至少一处完整引文（不截断）出自正确的那段资料；
+    - 所有引文都必须出自给定的 4 段资料之一——任何一处"真实前缀 + 编造后缀"都判错。"""
     k = re.search(r"资料(\d)", ref).group(1)
     basis = pred.split("回答")[0]
     m = re.search(r"资料\s*(\d)", basis)
     if not m or m.group(1) != k:
         return False
-    quotes = re.findall(r"[「“\"『]([^」”\"』]{8,})[」”\"』]", basis)
-    src = norm(CHUNKS[chunk_id]["text"])
-    return any(norm(q)[:60] in src for q in quotes)
+    quotes = [norm(q) for q in re.findall(r"[「“\"『]([^」”\"』]{8,})[」”\"』]", basis)]
+    oracle, ctx = norm(CHUNKS[chunk_id]["text"]), norm(context)
+    return bool(quotes) and any(q in oracle for q in quotes) and all(q in ctx for q in quotes)
 
 JUDGE = """你是严格的阅卷老师。
 问题：{q}
@@ -61,7 +64,14 @@ async def judge_all(items, cache):
 def main():
     RES.mkdir(exist_ok=True)
     cache = json.loads(CACHE_F.read_text(encoding="utf-8")) if CACHE_F.exists() else {}
-    runs = {p.stem: [json.loads(l) for l in p.open(encoding="utf-8")] for p in sorted(PREDS.glob("*.jsonl")) if p.stem != "speed"}
+    runs = {}
+    for p in sorted(PREDS.glob("*.jsonl")):
+        if p.stem.startswith("speed"):          # speed.jsonl / speed_v2.jsonl 是测速记录，不是预测
+            continue
+        rows = [json.loads(l) for l in p.open(encoding="utf-8")]
+        if len(rows) != len(TEST) or not all({"meta", "ref", "pred"} <= r.keys() for r in rows):
+            raise SystemExit(f"{p.name}：不是完整的预测文件（应为 {len(TEST)} 条，每条含 meta/ref/pred）")
+        runs[p.stem] = rows
     todo = []
     for name, rows in runs.items():
         for i, r in enumerate(rows):
@@ -79,7 +89,8 @@ def main():
         pos = [r for r in rows if r["meta"]["has_oracle"]]; neg = [r for r in rows if not r["meta"]["has_oracle"]]
         table[name] = {
             "答案正确率": sum(score.get(cache[r["_key"]].get("verdict"), 0) for r in pos) / len(pos),
-            "引用正确率": sum(cite_ok(r["pred"], r["ref"], r["meta"]["chunk_id"]) for r in pos) / len(pos),
+            "引用正确率": sum(cite_ok(r["pred"], r["ref"], r["meta"]["chunk_id"], TEST[i]["instruction"])
+                          for i, r in enumerate(rows) if r["meta"]["has_oracle"]) / len(pos),
             "误拒率": sum(refused(r) for r in pos) / len(pos),
             "拒答率": sum(refused(r) for r in neg) / len(neg),
             "拒答率_正则": sum(is_refusal(r["pred"]) for r in neg) / len(neg),

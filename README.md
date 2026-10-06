@@ -16,7 +16,7 @@
 | Qwen3-1.7B 原版 | 80% | 5% | 25% | 0.7 s |
 | **Qwen3-1.7B + RAFT** | 79% | 76% | 81% | 0.3 s |
 | 1.7B + RAFT，Q4 量化，笔记本 CPU（Ollama） | 76% | 65% | 69% | 25 s |
-| DeepSeek（老师） | 99% | 84% | 88% | 1.3 s |
+| DeepSeek（老师） | 99% | 76% | 88% | 1.3 s |
 
 **端到端**：tree-RAG 真实检索 + 只取前 4 段资料作答，71 题。
 
@@ -36,7 +36,7 @@
    - LLaMA-Factory 的 `qwen3_nothink` 模板缺少 vLLM 在 `enable_thinking=False` 时插入的空 `<think>` 块，导致 v1 模型常常漏写开头的「依据」。`scripts/check_template.py` 可以逐 token 证明这一点。改用 `qwen3` 模板加 `enable_thinking: false` 后，格式遵循率从 73%/86% 提高到 100%，拒答率从 69% 提高到 94%。
    - Ollama 会优先使用 GGUF 文件自带的 Jinja 模板、忽略 Modelfile 里写的 TEMPLATE，并且默认开启思考模式，结果 16/71 题的回答全进了 thinking 字段，正文为空。需要在原生接口传 `think: false`，或在 OpenAI 兼容接口传 `reasoning_effort: "none"`。
 4. **端到端的瓶颈在排序，而不在回答模型。** 标准答案原文出现在全部命中段里的比例是 94%，但只有 83% 排进了前 4 段。只要答案在前 4 段，DeepSeek 的正确率就有 98%。重排后，前 4 段命中率提高到 92%（BM25，几乎零成本）和 94%（bge-reranker）。DeepSeek 只读 4 段，就追平了读全部 12.6 段的效果。
-5. **学生在引用上超过了老师。** 8B + RAFT 的引用正确率是 87%，DeepSeek 是 84%：老师经常改写原文，学生学到的是逐字引用。
+5. **学生在引用上超过了老师。** 8B + RAFT 的引用正确率是 87%，DeepSeek 只有 76%：老师经常只有开头和原文对得上，后半句是改写的；学生学到的是完整的逐字引用。（引用校验要求完整引文逐字出自原文，见 `scripts/score.py` 的 `cite_ok`。）
 
 ## 流水线
 

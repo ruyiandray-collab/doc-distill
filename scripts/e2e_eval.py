@@ -56,8 +56,11 @@ async def get_retrieval(rows, mode):
             hits = [{"name": h["name"], "location": h.get("location", ""), "title": h.get("title", ""), "text": h["text"]} for h in res["hits"]]
             cache[r["question"]] = {"question": r["question"], "hits": hits, "retrieve_s": round(time.time() - t, 1)}
     await asyncio.gather(*[one(r) for r in rows])
-    with f.open("w", encoding="utf-8") as fo:
-        for r in rows: fo.write(json.dumps(cache[r["question"]], ensure_ascii=False) + "\n")
+    # 写回全部缓存（不只是本次的 rows）：--limit 跑子集时不能把已有的完整缓存冲掉
+    tmp = f.with_suffix(".tmp")
+    with tmp.open("w", encoding="utf-8") as fo:
+        for v in cache.values(): fo.write(json.dumps(v, ensure_ascii=False) + "\n")
+    tmp.replace(f)
     return cache
 
 def messages(fmt, q, hits):
@@ -108,12 +111,14 @@ async def main(a):
                "gold_in_all_hits": sum(gold(r, 99) for r in rows) / len(rows),
                "avg_hits": sum(len(ret[r["question"]]["hits"]) for r in rows) / len(rows),
                "avg_retrieve_s": sum(ret[r["question"]]["retrieve_s"] for r in rows) / len(rows)}
+    if a.limit:   # 子集只用来调试，不覆盖完整评测的 summary
+        a.mode_tag = f"{a.mode}_limit{a.limit}"
     for name in a.systems.split(","):
         ans = await run_system(name, rows, ret, a.mode)
         s = await judge(rows, ans)
         summary[name] = {"acc": sum(s) / len(s), "avg_answer_s": sum(ans[r["question"]]["answer_s"] for r in rows) / len(rows),
                          "acc_when_gold_in_top4": sum(x for x, r in zip(s, rows) if gold(r, 4)) / max(1, sum(gold(r, 4) for r in rows))}
-    (OUT / f"summary_{a.mode}.json").write_text(json.dumps(summary, ensure_ascii=False, indent=1), encoding="utf-8")
+    (OUT / f"summary_{getattr(a, 'mode_tag', a.mode)}.json").write_text(json.dumps(summary, ensure_ascii=False, indent=1), encoding="utf-8")
     print(json.dumps(summary, ensure_ascii=False, indent=1))
 
 if __name__ == "__main__":
